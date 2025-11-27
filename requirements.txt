@@ -1,0 +1,11 @@
+Flask Web Framework Core: Used to build your API interfaces (@app.route) and handle HTTP requests/responses. Core application logic.
+
+gunicorn WSGI Server: A high-performance, production-grade web server that Render uses to run your Flask applications and handle concurrent requests. Required for deployment (called by Procfile).
+
+mysql-connector-python Database Driver: A Python library provided by Oracle for connecting to and manipulating your cloud MySQL database (used in SalesAnalyzer.py). Data layer connectivity.
+
+requests HTTP Client: Used to securely and efficiently send HTTP requests to external services (such as the Gemini API) in Python. AI service calls.
+
+python-dotenv Local Configuration Loader: For local development environments only, helps you load keys and configurations from the config.env file. Note: When deploying to Render, it automatically ignores this file and reads environment variables directly. Required for local development.
+
+google-genai (Optional): Required if you are using Google's official AI SDK. If you are manually calling the API via requests, then this is not necessary. There are alternative AI clients to requests.
