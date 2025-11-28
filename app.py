@@ -1,6 +1,6 @@
 import json
 from flask import Flask, jsonify
-from flask_cors import CORS  # 导入 CORS，确保前端能访问
+from flask_cors import CORS
 import os
 import sys
 
@@ -15,14 +15,18 @@ CORS(app)
 try:
     # init AI
     advisor = PromotionAdvisor()
-    print("PromotionAdvisor 初始化成功 (连接 Gemini API)。")
+
+    # get data
+    Analyzer = SalesAnalyzer()
+
 except EnvironmentError as e:
     print(f"Flask Server failed to initialize PromotionAdvisor: {e}", file=sys.stderr)
     advisor = None
+    Analyzer = None
 except Exception as e:
     print(f"Flask Server failed to initialize PromotionAdvisor: {e}", file=sys.stderr)
     advisor = None
-
+    Analyzer = None
 
 @app.route('/api/report', methods=['GET'])
 def get_promotion_report():
@@ -35,8 +39,7 @@ def get_promotion_report():
 
     try:
 
-        # get data
-        Analyzer = SalesAnalyzer()
+
 
         data_from_db = Analyzer.format_data_for_ai()
 
