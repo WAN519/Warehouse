@@ -1,6 +1,8 @@
 # Web Framework Core
 Flask
 
+flask-cors
+
 # WSGI Production Server (Used for deployment)
 gunicorn
 
