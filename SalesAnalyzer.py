@@ -1,4 +1,5 @@
 import os
+import tempfile
 from dotenv import load_dotenv
 import mysql.connector
 from mysql.connector import Error
@@ -16,13 +17,20 @@ class SalesAnalyzer:
         self.LOW_SALES_THRESHOLD = int(os.environ.get('LOW_SALES_THRESHOLD', 10))
 
         # Database configuration
+        ssl_ca_content = os.environ.get('DB_SSL_CA_CONTENT')
+        if ssl_ca_content:
+
+            temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
+            temp_file.write(ssl_ca_content)
+            temp_file.close()
+
         DB_CONFIG = {
             'host': os.environ.get('DB_HOST'),
             'database': os.environ.get('DB_DATABASE'),
             'user': os.environ.get('DB_USER'),
             'password': os.environ.get('DB_PASSWORD'),
             'port': int(os.environ.get('DB_PORT', 5432)),
-            'ssl_ca': os.environ.get('DB_SSL_CA'),
+            'ssl_ca': temp_file.name,
             'ssl_verify_cert': bool(os.environ.get('DB_SSL_VERIFY_CERT')) == True
         }
 

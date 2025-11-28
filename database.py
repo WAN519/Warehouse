@@ -1,6 +1,7 @@
 import mysql.connector
 from mysql.connector import Error
 import os
+import tempfile
 from dotenv import load_dotenv
 
 
@@ -10,6 +11,13 @@ class DatabaseManager:
     def __init__(self):
         # load db_config
         load_dotenv('config.env')
+        # Database configuration
+        ssl_ca_content = os.environ.get('DB_SSL_CA_CONTENT')
+        if ssl_ca_content:
+
+            temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
+            temp_file.write(ssl_ca_content)
+            temp_file.close()
         # get db_config KEY
         DB_CONFIG = {
             'host': os.environ.get('DB_HOST'),
@@ -17,7 +25,7 @@ class DatabaseManager:
             'user': os.environ.get('DB_USER'),
             'password': os.environ.get('DB_PASSWORD'),
             'port': int(os.environ.get('DB_PORT', 5432)),
-            'ssl_ca': os.environ.get('DB_SSL_CA'),
+            'ssl_ca': temp_file.name,
             'ssl_verify_cert': bool(os.environ.get('DB_SSL_VERIFY_CERT')) == True
         }
         self.config = DB_CONFIG.copy()
