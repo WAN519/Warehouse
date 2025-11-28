@@ -475,10 +475,11 @@
                 let data = null;
                 const maxRetries = 3;
                 let retryCount = 0;
+                const API_BASE_URL = 'https://inventory-analysis-api.onrender.com';
 
                 while (retryCount < maxRetries) {
                     try {
-                        const response = await fetch('/api/report');
+                        const response = await fetch('${API_BASE_URL}/api/report');
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
