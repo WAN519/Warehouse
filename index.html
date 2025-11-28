@@ -479,7 +479,7 @@
 
                 while (retryCount < maxRetries) {
                     try {
-                        const response = await fetch('${API_BASE_URL}/api/report');
+                        const response = await fetch(`${API_BASE_URL}/api/report`);
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
