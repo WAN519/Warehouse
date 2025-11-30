@@ -23,3 +23,6 @@ pymongo
 
 #Dependency for auto check suggestion
 schedule
+
+#HTTP client for external service calls
+requests
