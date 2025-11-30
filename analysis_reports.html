@@ -303,9 +303,7 @@ function toggleRowDetails(docId, button) {
 }
 
 
-/**
-* API Call: Retrieves all MongoDB log documents
-*/
+// API Call: Retrieves all MongoDB log documents
 async function loadLogs() {
 logTable.classList.add('hidden');
 statusMessage.classList.remove('hidden');
@@ -334,10 +332,8 @@ loadingSpinner.classList.add('hidden');
 }
 }
 
-/**
-* API Call: Deletes a document by ID
-* @param {string} docId - The MongoDB _id of the document to delete
-*/
+
+//API Call: Deletes a document by ID
 async function deleteLog(docId) {
 const confirmed = await showModal(
 "Confirm Deletion",
