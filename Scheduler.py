@@ -10,7 +10,7 @@ class PromotionScheduler:
     def schedule_daily_analysis(self, run_ai_analysis):
 
         #schedule.every(5).minutes.do(run_ai_analysis)
-        schedule.every(12).hours.do(run_ai_analysis)
+        schedule.every(6).hours.do(run_ai_analysis)
         #schedule.every().day.at("00:00").do(run_ai_analysis)
         #schedule.every().day.at("06:00").do(run_ai_analysis)
         #schedule.every().day.at("12:00").do(run_ai_analysis)
