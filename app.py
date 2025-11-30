@@ -154,7 +154,6 @@ def run_ai_analysis():
             print("✗ Database retrieval failed or returned no data.")
             is_analyzing = False
             return
-        print(data_from_db)
         print("✓ Data retrieved from database")
 
         # Call AI module to get the raw Markdown string
