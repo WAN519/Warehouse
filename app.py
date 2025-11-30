@@ -1,5 +1,5 @@
 import json
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 from flask_cors import CORS
 import os
 import sys
@@ -16,7 +16,11 @@ from mongoDB import HistoryDB
 # --- Flask  init ---
 app = Flask(__name__)
 # start CORS
-CORS(app)
+CORS(app, origins=[
+    "https://wan519.github.io",  # GitHub Pages
+    "http://127.0.0.1:5000",     # 本地测试
+    "http://localhost:5000"
+])
 
 # global
 latest_report = None
@@ -257,42 +261,6 @@ def delete_report_api(id):
     except Exception as e:
         print(f"Error deleting MongoDB report {id}: {e}")
         return jsonify({"error": f"Failed to delete report: {e}"}), 500
-
-
-@app.route('/')
-def serve_index():
-    """Serve the index.html file"""
-    try:
-        return open('index.html', 'r', encoding='utf-8').read()
-    except FileNotFoundError:
-        return "Error: index.html not found.", 404
-
-
-@app.route('/ai-suggestion.html')
-def serve_ai_suggestion():
-    """Serve the ai-suggestion.html file"""
-    try:
-        return open('ai-suggestion.html', 'r', encoding='utf-8').read()
-    except FileNotFoundError:
-        return "Error: ai-suggestion.html not found.", 404
-
-
-@app.route('/mysql-crud.html')
-def serve_mysql():
-    """Serve the mysql-crud.html file"""
-    try:
-        return open('mysql-crud.html', 'r', encoding='utf-8').read()
-    except FileNotFoundError:
-        return "Error: mysql-crud.html not found.", 404
-
-@app.route('/analysis_reports.html')
-def serve_analysis_reports():
-    """Serve the analysis_reports.html file"""
-    try:
-        return open('analysis_reports.html', 'r', encoding='utf-8').read()
-    except FileNotFoundError:
-        return "Error: analysis_reports.html not found.", 404
-
 
 if __name__ == '__main__':
     print("--- Starting Flask Server on http://127.0.0.1:5000 ---")
