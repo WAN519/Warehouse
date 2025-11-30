@@ -17,3 +17,6 @@ python-dotenv
 
 # Optional: Google's Official AI SDK (Include only if using this SDK)
 google-genai
+
+# Database for pymongo
+pymongo
