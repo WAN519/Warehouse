@@ -28,14 +28,4 @@ schedule
 requests
 
 # draw chart
-
-matplot
 matplotlib
-matplotlib-pyplot
-matplotlib-colors
-
-# ignore warning
-warnings
-
-# switch to base64 can be accept by html
-base64
