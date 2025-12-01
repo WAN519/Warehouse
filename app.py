@@ -1,7 +1,8 @@
-import json
-from flask import Flask, jsonify, render_template
+import warnings
+warnings.filterwarnings('ignore', message='.*urllib3 v2.*')
+
+from flask import Flask, jsonify, send_file
 from flask_cors import CORS
-import os
 import sys
 from threading import Thread
 from datetime import datetime
@@ -12,6 +13,7 @@ from SalesAnalyzer import SalesAnalyzer
 from PromotionAdvisor import PromotionAdvisor
 from Scheduler import PromotionScheduler
 from mongoDB import HistoryDB
+from ChartDesign import ChartDesign
 
 # --- Flask  init ---
 app = Flask(__name__)
@@ -260,6 +262,36 @@ def delete_report_api(id):
     except Exception as e:
         print(f"Error deleting MongoDB report {id}: {e}")
         return jsonify({"error": f"Failed to delete report: {e}"}), 500
+@app.route('/api/charts/bar-top5', methods=['GET'])
+def get_bar_chart_top5():
+    chart = ChartDesign()
+    bar = chart.generate_bar_chart_top5_slow_products()
+    return bar
+
+@app.route('/api/charts/scatter-price-days', methods=['GET'])
+def get_scatter_chart():
+    chart = ChartDesign()
+    scatter = chart.generate_scatter_price_vs_days()
+    return scatter
+
+@app.route('/api/charts/pie-warehouse', methods=['GET'])
+def get_pie_chart_warehouse():
+    chart = ChartDesign()
+    pie = chart.generate_pie_warehouse_distribution()
+    return pie
+
+
+@app.route("/Warehouse/")
+def home():
+    return send_file("index.html")
+
+@app.route("/Warehouse/ai_suggestion.html")
+def ai_suggestion():
+    return send_file("ai_suggestion.html")
+
+@app.route("/Warehouse/analysis_reports.html")
+def analysis_report():
+    return send_file("analysis_reports.html")
 
 if __name__ == '__main__':
     print("--- Starting Flask Server on http://127.0.0.1:5000 ---")
