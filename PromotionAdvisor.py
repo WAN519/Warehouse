@@ -48,7 +48,6 @@ class PromotionAdvisor:
             return (
                 "| Product Name | Supply Name | Analysis | Promotional Strategy |\n"
                 "| :---: | :---: | :---: | :---: |\n"
-                "| No Data | N/A | 错误：输入分析数据为空。 | 请检查数据源（SalesAnalyzer 模块）。 |"
             )
 
         # Extract the actual list of products from the analysis dictionary
