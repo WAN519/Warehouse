@@ -46,26 +46,7 @@ class SalesAnalyzer:
             return None
 
     def get_slow_moving_products(self, days=None):
-        """
-        Search for slow-moving products
 
-        Return type:
-        [
-            {
-                'supplier_id': 'S00000001',
-                'product_id': 'P00000001',
-                'product_name': 'Product Name',
-                'type': 'Category',
-                'price': 99.99,
-                'stock_quantity': 450,
-                'supply_quantity': 500,
-                'sell_through_rate': 0.10,
-                'days_in_stock': 30,
-                'warehouse_id': 'W00000001'
-            },
-            ...
-        ]
-        """
         if days is None:
             days = self.ANALYSIS_DAYS
 
@@ -129,21 +110,7 @@ class SalesAnalyzer:
                 conn.close()
 
     def get_category_performance(self):
-        """
-        Get sales performance by category
 
-        Return type:
-        [
-            {
-                'category': 'Electronics',
-                'total_products': 50,
-                'slow_moving_count': 15,
-                'slow_moving_percentage': 30.0,
-                'avg_stock': 250
-            },
-            ...
-        ]
-        """
         conn = None
         cursor = None
 
@@ -217,17 +184,8 @@ class SalesAnalyzer:
 
         return report
 
-    def get_product_sales_history(self, product_id, days=30):
-        """
-        Get sales history for a specific product
+    def top5_slow_products(self):
 
-        Args:
-            product_id: Product ID
-            days: Number of days to look back
-
-        Returns:
-            List of sales records
-        """
         conn = None
         cursor = None
 
@@ -240,25 +198,23 @@ class SalesAnalyzer:
 
             query = """
             SELECT 
-                i.order_id,
-                i.orderquantity,
-                o.order_time,
-                i.status,
-                i.warehouse_id
-            FROM inform i
-            JOIN orders o ON i.order_id = o.order_id
-            WHERE i.product_id = %s
-                AND o.order_time >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
-            ORDER BY o.order_time DESC
-            """
+                p.product_name,
+                ROUND((gs.quantity - sr.storequantity) / gs.quantity, 2) as sell_through_rate
+                FROM good_supply gs
+                LEFT JOIN store_records sr 
+                    ON gs.warehouse_id = sr.warehouse_id 
+                    AND gs.product_id = sr.product_id
+                LEFT JOIN products p
+                    ON gs.product_id = p.product_id
+                WHERE DATEDIFF(CURDATE(), DATE(gs.supply_time)) >= %s 
+                    AND (gs.quantity - sr.storequantity) / gs.quantity < 0.2
+                    AND sr.storequantity > 100
+                ORDER BY sell_through_rate ASC
+                LIMIT 5
+                """
 
-            cursor.execute(query, (product_id, days))
+            cursor.execute(query, (self.LOW_SALES_THRESHOLD,))
             results = cursor.fetchall()
-
-            # Convert datetime
-            for row in results:
-                if row.get('order_time'):
-                    row['order_time'] = row['order_time'].strftime('%Y-%m-%d %H:%M:%S')
 
             return results
 
@@ -272,22 +228,79 @@ class SalesAnalyzer:
             if conn:
                 conn.close()
 
+    def price_vs_days(self):
 
-# Example usage
-    def test(self):
-        analyzer = SalesAnalyzer()
+        conn = None
+        cursor = None
 
-        category_performance = analyzer.get_category_performance()
+        try:
+            conn = self._get_connection()
+            if not conn:
+                return None
 
-        if category_performance:
-            for cat in category_performance:
-                print(f"\n{cat['category']}:")
-                print(f"  Total Products: {cat['total_products']}")
-                print(f"  Avg Stock: {cat['avg_stock']:.0f}")
-                print(f"  High Stock Items: {cat['high_stock_count']} ({cat['high_stock_percentage']:.1f}%)")
+            cursor = conn.cursor(dictionary=True)
 
-         # Test full report
+            query = """
+            SELECT 
+                p.price,
+                DATEDIFF(NOW(), gs.supply_time) as days_in_stock,
+                p.product_name
+            FROM products p
+            JOIN good_supply gs ON p.product_id = gs.product_id
+            WHERE gs.supply_time IS NOT NULL
+                AND DATEDIFF(NOW(), gs.supply_time) > 0
+            LIMIT 100
+            """
 
-        report = analyzer.format_data_for_ai()
+            cursor.execute(query)
+            results = cursor.fetchall()
 
-        return report
+            return results
+
+        except Error as e:
+            print(f"Query failed: {e}")
+            return None
+
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+
+    def warehouse_distribution(self):
+
+        conn = None
+        cursor = None
+
+        try:
+            conn = self._get_connection()
+            if not conn:
+                return None
+
+            cursor = conn.cursor(dictionary=True)
+
+            query = """
+            SELECT 
+                w.location,
+                w.warehouse_id,
+                SUM(sr.storequantity) as total_stock
+            FROM warehouses w
+            JOIN store_records sr ON w.warehouse_id = sr.warehouse_id
+            GROUP BY w.warehouse_id, w.location
+            ORDER BY total_stock DESC
+            """
+
+            cursor.execute(query)
+            results = cursor.fetchall()
+
+            return results
+
+        except Error as e:
+            print(f"Query failed: {e}")
+            return None
+
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
