@@ -2,7 +2,7 @@ import warnings
 warnings.filterwarnings('ignore', message='.*urllib3 v2.*')
 
 import matplotlib
-matplotlib.use('Agg')  # 无 GUI 模式
+matplotlib.use('Agg')  # no gui mode
 import matplotlib.pyplot as plt
 import io
 import base64
@@ -97,11 +97,11 @@ class ChartDesign:
         # covert to base64
         image_base64 = self.convert_to_base64(fig)
 
-        img_data = image_base64.split(',')[1]
-        with open("barchart.png", 'wb') as f:
-            f.write(base64.b64decode(img_data))
+        # save at root
+        # img_data = image_base64.split(',')[1]
+        # with open("barchart.png", 'wb') as f:
+        #   f.write(base64.b64decode(img_data))
 
-        print(f"✓ 已保存:barchart.png")
 
         return {
             "success": True,
@@ -174,11 +174,11 @@ class ChartDesign:
         # convert to base64
         image_base64 = self.convert_to_base64(fig)
 
-        img_data = image_base64.split(',')[1]
-        with open("scatterchart.png", 'wb') as f:
-            f.write(base64.b64decode(img_data))
+        # save chart at root
+        #img_data = image_base64.split(',')[1]
+        #with open("scatterchart.png", 'wb') as f:
+        #    f.write(base64.b64decode(img_data))
 
-        print(f"✓ 已保存:scatterchart.png")
 
         return {
             "success": True,
@@ -206,14 +206,14 @@ class ChartDesign:
         fig.patch.set_facecolor('white')
 
         APPLE_PIE_COLORS = [
-             '#007AFF',  # iOS 蓝（主色）
-             '#E5E5EA',  # 浅灰
-             '#C7C7CC',  # 中灰
-             '#AEAEB2',  # 深灰
-             '#8E8E93',  # 更深灰
-             '#636366',  # 炭灰
-             '#48484A',  # 深炭灰
-             '#3A3A3C'   # 几乎黑
+             '#007AFF',  # iOS blue
+             '#E5E5EA',  # light gray
+             '#C7C7CC',  # medium gray
+             '#AEAEB2',  # dark gray
+             '#8E8E93',  # very dark gray
+             '#636366',  # more dark gray
+             '#48484A',  # more more dark gary
+             '#3A3A3C'   # neraly black
         ]
 
         # draw pie
@@ -256,14 +256,13 @@ class ChartDesign:
 
         plt.tight_layout()
 
-        # 转换为 base64
+        # base64
         image_base64 = self.convert_to_base64(fig)
 
-        img_data = image_base64.split(',')[1]
-        with open("piechart.png", 'wb') as f:
-            f.write(base64.b64decode(img_data))
-
-        print(f"✓ 已保存:piechart.png")
+        # save chart at root
+        # img_data = image_base64.split(',')[1]
+        # with open("piechart.png", 'wb') as f:
+        #    f.write(base64.b64decode(img_data))
 
         return {
             "success": True,
@@ -273,19 +272,3 @@ class ChartDesign:
             "data_points": len(data),
             "business_insight": "Identifies warehouses with highest inventory pressure for rebalancing"
         }
-
-    def generate_all_charts(self):
-        """
-        一次性生成所有三张图表
-
-        Returns:
-            dict: 包含所有图表的字典
-        """
-        return {
-            "chart1_bar": self.generate_bar_chart_top5_slow_products(),
-            "chart2_scatter": self.generate_scatter_price_vs_days(),
-            "chart3_pie": self.generate_pie_warehouse_distribution()
-        }
-
-test = ChartDesign()
-result = test.generate_all_charts()
