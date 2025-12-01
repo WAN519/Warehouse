@@ -97,11 +97,11 @@ class ChartDesign:
         # covert to base64
         image_base64 = self.convert_to_base64(fig)
 
-        # save at root
-        # img_data = image_base64.split(',')[1]
-        # with open("barchart.png", 'wb') as f:
-        #   f.write(base64.b64decode(img_data))
-
+        #save at root
+        img_data = image_base64.split(',')[1]
+        with open("barchart.png", 'wb') as f:
+           f.write(base64.b64decode(img_data))
+        print("barchart.png saved success!")
 
         return {
             "success": True,
@@ -175,10 +175,10 @@ class ChartDesign:
         image_base64 = self.convert_to_base64(fig)
 
         # save chart at root
-        #img_data = image_base64.split(',')[1]
-        #with open("scatterchart.png", 'wb') as f:
-        #    f.write(base64.b64decode(img_data))
-
+        img_data = image_base64.split(',')[1]
+        with open("scatterchart.png", 'wb') as f:
+            f.write(base64.b64decode(img_data))
+        print("scatterchart.png saved success")
 
         return {
             "success": True,
@@ -260,9 +260,10 @@ class ChartDesign:
         image_base64 = self.convert_to_base64(fig)
 
         # save chart at root
-        # img_data = image_base64.split(',')[1]
-        # with open("piechart.png", 'wb') as f:
-        #    f.write(base64.b64decode(img_data))
+        img_data = image_base64.split(',')[1]
+        with open("piechart.png", 'wb') as f:
+           f.write(base64.b64decode(img_data))
+        print("piechart.png saved success!")
 
         return {
             "success": True,
