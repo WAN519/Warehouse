@@ -31,8 +31,8 @@ requests
 
 matplot
 matplotlib
-matplotlib.pyplot
-matplotlib.colors
+matplotlib-pyplot
+matplotlib-colors
 
 # ignore warning
 warnings
