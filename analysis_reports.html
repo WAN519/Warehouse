@@ -114,10 +114,11 @@ animation: spin 1s linear infinite;
 
 <!-- Navigation Bar -->
 <nav class="mb-8 p-4 bg-white rounded-xl shadow-lg shadow-gray-200/40 border border-gray-100 flex space-x-6 text-sm font-semibold text-gray-600">
-<a href="/Warehouse/" class="hover:text-gray-900 transition duration-150">Home</a>
-<a href="/Warehouse/ai_suggestion.html" class="hover:text-gray-900 transition duration-150">AI Suggestion</a>
+    <a href="/Warehouse/" class="hover:text-gray-900 transition duration-150">Home</a>
+    <a href="/Warehouse/ai_suggestion.html" class="hover:text-gray-900 transition duration-150">AI Suggestion</a>
+    <a href="/Warehouse/ml_pricing.html" class="hover:text-gray-900 transition duration-150">ML Pricing Strategy</a>
 <!-- Current page link -->
-<a href="/Warehouse/analysis_reports.html" class="text-blue-600 border-b-2 border-blue-600 pb-1">Analysis History</a>
+    <a href="/Warehouse/analysis_reports.html" class="text-blue-600 border-b-2 border-blue-600 pb-1">Analysis History</a>
 </nav>
 
 <header class="mb-10">
@@ -190,7 +191,7 @@ Loading data from backend API...
 // API Endpoints
 const API_BASE_URL = 'https://inventory-analysis-api.onrender.com';
 const API_LOGS_URL = `${API_BASE_URL}/api/mongodb/logs`;
-const API_DELETE_URL = `${API_BASE_URL}/api/mongodb/delete/`;
+const API_DELETE_URL = `{${API_BASE_URL}}/api/mongodb/delete/`;
 
 const statusMessage = document.getElementById('status-message');
 const loadingSpinner = document.getElementById('loading-spinner');

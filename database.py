@@ -37,7 +37,7 @@ class DatabaseManager:
             'pool_size': 3
         })
 
-    def _get_connection(self):
+    def get_connection(self):
         """get new connection"""
         try:
             return mysql.connector.connect(**self.config)
@@ -46,7 +46,7 @@ class DatabaseManager:
             return None
 
     def connect(self):
-        conn = self._get_connection()
+        conn = self.get_connection()
         if conn and conn.is_connected():
             print("database connect successful")
             conn.close()
@@ -57,7 +57,7 @@ class DatabaseManager:
         conn = None
         cursor = None
         try:
-            conn = self._get_connection()
+            conn = self.get_connection()
             if not conn:
                 return False
 
@@ -99,7 +99,7 @@ class DatabaseManager:
         conn = None
         cursor = None
         try:
-            conn = self._get_connection()
+            conn = self.get_connection()
             if not conn:
                 return None
 
@@ -134,7 +134,7 @@ class DatabaseManager:
         conn = None
         cursor = None
         try:
-            conn = self._get_connection()
+            conn = self.get_connection()
             if not conn:
                 return None
 

@@ -29,3 +29,10 @@ requests
 
 # draw chart
 matplotlib
+
+# Machine Learning
+scikit-learn
+pandas
+joblib
+# Additional utilities
+Pillow

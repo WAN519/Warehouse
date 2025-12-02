@@ -63,32 +63,34 @@ class SalesAnalyzer:
             # Fixed SQL query based on your actual table structure
             query = """
             SELECT 
-                gs.supplier_id,
-                gs.product_id,
+                MIN(gs.supplier_id) as supplier_id,
+                MIN(p.product_id) as product_id,
                 p.product_name,
-                p.type,
-                p.price,
-                p.manufacturer,
-                sr.storequantity as stock_quantity,
-                gs.quantity as supply_quantity,
-                gs.warehouse_id,
-                gs.supply_time,
-                DATEDIFF(CURDATE(), DATE(gs.supply_time)) as days_in_stock,
-                ROUND((gs.quantity - sr.storequantity) / gs.quantity, 2) as sell_through_rate
+                MIN(p.type) as type,
+                AVG(p.price) as price,
+                MIN(p.manufacturer) as manufacturer,
+                SUM(sr.storequantity) as stock_quantity,
+                SUM(gs.quantity) as supply_quantity,
+                MIN(sr.warehouse_id) as warehouse_id,
+                MIN(gs.supply_time) as supply_time,
+                MAX(DATEDIFF(CURDATE(), DATE(gs.supply_time))) as days_in_stock,
+                AVG(ROUND((gs.quantity - sr.storequantity) / gs.quantity, 2)) as sell_through_rate
             FROM good_supply gs
             LEFT JOIN store_records sr 
                 ON gs.warehouse_id = sr.warehouse_id 
                 AND gs.product_id = sr.product_id
             LEFT JOIN products p
                 ON gs.product_id = p.product_id
-            WHERE DATEDIFF(CURDATE(), DATE(gs.supply_time)) >= %s
-                AND (gs.quantity - sr.storequantity) / gs.quantity < 0.2
-                AND sr.storequantity > 100
-            ORDER BY sr.storequantity DESC, sell_through_rate ASC
+            WHERE DATEDIFF(CURDATE(), DATE(gs.supply_time)) >= 10
+                AND (gs.quantity - sr.storequantity) / gs.quantity < 0.4
+
+            GROUP BY p.product_name
+
+            ORDER BY sell_through_rate ASC
             LIMIT 50
             """
 
-            cursor.execute(query, (self.LOW_SALES_THRESHOLD,))
+            cursor.execute(query)
             results = cursor.fetchall()
 
             # Convert datetime to string
@@ -199,21 +201,23 @@ class SalesAnalyzer:
             query = """
             SELECT 
                 p.product_name,
-                ROUND((gs.quantity - sr.storequantity) / gs.quantity, 2) as sell_through_rate
-                FROM good_supply gs
-                LEFT JOIN store_records sr 
-                    ON gs.warehouse_id = sr.warehouse_id 
-                    AND gs.product_id = sr.product_id
-                LEFT JOIN products p
-                    ON gs.product_id = p.product_id
-                WHERE DATEDIFF(CURDATE(), DATE(gs.supply_time)) >= %s 
-                    AND (gs.quantity - sr.storequantity) / gs.quantity < 0.2
-                    AND sr.storequantity > 100
-                ORDER BY sell_through_rate ASC
-                LIMIT 5
-                """
+                AVG(ROUND((gs.quantity - sr.storequantity) / gs.quantity, 2)) as sell_through_rate
+            FROM good_supply gs
+            LEFT JOIN store_records sr 
+                ON gs.warehouse_id = sr.warehouse_id 
+                AND gs.product_id = sr.product_id
+            LEFT JOIN products p
+                ON gs.product_id = p.product_id
+            WHERE DATEDIFF(CURDATE(), DATE(gs.supply_time)) >= 10
+                AND (gs.quantity - sr.storequantity) / gs.quantity < 0.3
 
-            cursor.execute(query, (self.LOW_SALES_THRESHOLD,))
+            GROUP BY p.product_name
+
+            ORDER BY sell_through_rate ASC
+            LIMIT 5
+            """
+
+            cursor.execute(query)
             results = cursor.fetchall()
 
             return results
@@ -302,5 +306,74 @@ class SalesAnalyzer:
         finally:
             if cursor:
                 cursor.close()
+            if conn:
+                conn.close()
+
+    def get_slow_moving_products_ML(self, days=30):
+        """
+        Get top 5 slowest-selling products with ML-required fields
+        """
+        conn = None
+        cursor = None
+
+        try:
+            conn = self._get_connection()
+            if not conn:
+                return None
+
+            query = """
+            SELECT 
+                MIN(p.product_id) as product_id,
+                p.product_name,
+                MIN(p.type) as category,
+                AVG(p.price) as price,
+                MIN(p.manufacturer) as manufacturer,
+                MIN(gs.supplier_id) as supplier_id,
+                MIN(sr.warehouse_id) as warehouse_id,
+                SUM(sr.storequantity) AS stock_quantity,
+                SUM(gs.quantity) AS supply_quantity,
+                MAX(DATEDIFF(CURDATE(), DATE(gs.supply_time))) AS days_in_stock,
+
+                SUM(COALESCE(
+                    (SELECT SUM(i.orderquantity) 
+                     FROM inform i 
+                     JOIN orders o ON i.order_id = o.order_id
+                     WHERE i.product_id = p.product_id 
+                       AND o.order_time >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                    ), 0
+                )) as monthly_sales,
+
+                AVG(ROUND((gs.quantity - sr.storequantity) / gs.quantity, 2)) as sell_through_rate
+
+            FROM good_supply gs
+            LEFT JOIN store_records sr 
+                ON gs.warehouse_id = sr.warehouse_id 
+                AND gs.product_id = sr.product_id
+            LEFT JOIN products p
+                ON gs.product_id = p.product_id
+
+            WHERE DATEDIFF(CURDATE(), DATE(gs.supply_time)) >= 10
+                AND (gs.quantity - sr.storequantity) / gs.quantity < 0.4
+                AND sr.storequantity > 30
+
+            GROUP BY p.product_name
+
+            HAVING monthly_sales < 20
+
+            ORDER BY sell_through_rate ASC
+            LIMIT 5;
+            """
+
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute(query)
+            products = cursor.fetchall()
+
+            return products
+
+        except Exception as e:
+            print(f"Error: {e}")
+            return []
+
+        finally:
             if conn:
                 conn.close()

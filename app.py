@@ -1,13 +1,15 @@
 import warnings
 warnings.filterwarnings('ignore', message='.*urllib3 v2.*')
 
-from flask import Flask, jsonify, send_file
+from flask import Flask, jsonify, send_file, request
 from flask_cors import CORS
 import sys
 from threading import Thread
 from datetime import datetime
 from decimal import Decimal
 import traceback
+import joblib
+import numpy as np
 
 from SalesAnalyzer import SalesAnalyzer
 from PromotionAdvisor import PromotionAdvisor
@@ -28,6 +30,17 @@ CORS(app, origins=[
 latest_report = None
 last_analysis_time = None
 is_analyzing = False
+
+
+# Load model
+try:
+    model = joblib.load('models/demand_forecast_model.pkl')
+    le_category = joblib.load('models/category_encoder.pkl')
+    le_warehouse = joblib.load('models/warehouse_encoder.pkl')
+    print("✓ ML models loaded successfully")
+except Exception as e:
+    print(f"Warning: ML models not loaded - {e}")
+    model = None
 
 try:
     # init AI
@@ -196,6 +209,51 @@ def run_ai_analysis():
         is_analyzing = False
 
 
+def predict_quantity(category, price, warehouse_id):
+    """
+    Use ML model to predict order quantity at given price
+    """
+    if model is None:
+        return 1.0
+    try:
+        # Encode categorical features
+        try:
+            category_encoded = le_category.transform([category])[0]
+        except Exception as e:
+            print(f"Category encoding error: {e}")
+            return 1.0
+
+        try:
+            warehouse_encoded = le_warehouse.transform([warehouse_id])[0]
+        except Exception as e:
+            print(f"Warehouse encoding error: {e}")
+            return 1.0
+
+        # Current time features
+        now = datetime.now()
+
+        # Prepare features
+        features = np.array([[
+            category_encoded,
+            price,
+            now.hour,
+            now.isoweekday(),
+            now.month,
+            warehouse_encoded
+        ]])
+
+        # Predict
+        prediction = model.predict(features)[0]
+
+        return max(0.1, prediction)
+
+    except Exception as e:
+        print(f"Prediction error: {e}")
+        import traceback
+        traceback.print_exc()
+        return 1.0
+
+
 @app.route('/api/report', methods=['GET'])
 def get_promotion_report():
     """
@@ -262,6 +320,8 @@ def delete_report_api(id):
     except Exception as e:
         print(f"Error deleting MongoDB report {id}: {e}")
         return jsonify({"error": f"Failed to delete report: {e}"}), 500
+
+
 @app.route('/api/charts/bar-top5', methods=['GET'])
 def get_bar_chart_top5():
     chart = ChartDesign()
@@ -280,6 +340,66 @@ def get_pie_chart_warehouse():
     pie = chart.generate_pie_warehouse_distribution()
     return pie
 
+# Machine Learning
+@app.route('/api/predict-demand', methods=['POST'])
+def predict_demand():
+    """Predict order quantity"""
+    data = request.json
+
+    try:
+        # Encode categorical features
+        category_encoded = le_category.transform([data['product_category']])[0]
+        warehouse_encoded = le_warehouse.transform([data['warehouse_id']])[0]
+
+        # Prepare features
+        features = np.array([[
+            category_encoded,
+            data['price'],
+            data['order_hour'],
+            data['order_day'],
+            data['order_month'],
+            warehouse_encoded
+        ]])
+
+        # Predict
+        prediction = model.predict(features)[0]
+
+        return jsonify({
+            'predicted_quantity': round(prediction, 1),
+            'status': 'success'
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({'status': 'healthy', 'model_loaded': True})
+
+
+@app.route('/api/slow-moving-products', methods=['GET'])
+def get_slow_moving_products_api():
+    """
+    Get top 5 slowest-selling products for ML pricing analysis
+    """
+    try:
+        # get data from mysql
+        mysql = SalesAnalyzer()
+        products = mysql.get_slow_moving_products_ML()
+
+        return jsonify({
+            'status': 'success',
+            'products': products,
+            'count': len(products) if products else 0
+        })
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
 
 @app.route("/Warehouse/")
 def home():
@@ -292,6 +412,95 @@ def ai_suggestion():
 @app.route("/Warehouse/analysis_reports.html")
 def analysis_report():
     return send_file("analysis_reports.html")
+
+@app.route("/Warehouse/ml_pricing.html")
+def ml_pricing():
+    return send_file("ml_pricing.html")
+
+
+@app.route('/api/pricing-analysis', methods=['POST'])
+def pricing_analysis():
+    """
+    Analyze pricing strategy using pure ML prediction
+    """
+    data = request.json
+
+    try:
+        # 强制转换成float - 这是关键！
+        current_price = float(data['current_price'])  # ← 加 float()
+        monthly_sales = int(data.get('current_monthly_sales', 30))
+        category = str(data['category'])  # ← 确保是字符串
+        warehouse_id = str(data['warehouse_id'])  # ← 确保是字符串
+        product_name = str(data['product_name'])
+
+        if monthly_sales == 0:
+            monthly_sales = 10  # 默认假设月销10件
+
+        print(f"Converting types - price: {type(current_price)}, monthly_sales: {type(monthly_sales)}")
+
+        scenarios = []
+
+        # Current price
+        current_qty = predict_quantity(category, current_price, warehouse_id)
+        current_qty = float(current_qty)  # ← 确保是float
+
+        current_revenue = current_price * current_qty * monthly_sales
+        print(f"Current revenue calculation: {current_price} * {current_qty} * {monthly_sales} = {current_revenue}")
+
+        scenarios.append({
+            'discount_percent': 0,
+            'price': round(float(current_price), 2),
+            'predicted_qty_per_order': round(float(current_qty), 1),
+            'estimated_monthly_sales': int(current_qty * monthly_sales),
+            'estimated_monthly_revenue': round(float(current_revenue), 2),
+            'revenue_change_percent': 0,
+            'quantity_increase_percent': 0
+        })
+
+        # Test discounts: 10%, 20%, 30%, 40%
+        for discount in [10, 20, 30, 40]:
+            discounted_price = current_price * (1 - discount / 100)
+            discounted_price = float(discounted_price)  # ← 确保是float
+
+            predicted_qty = predict_quantity(category, discounted_price, warehouse_id)
+            predicted_qty = float(predicted_qty)  # ← 确保是float
+
+            estimated_sales = predicted_qty * monthly_sales
+            estimated_revenue = discounted_price * estimated_sales
+
+            revenue_change = ((estimated_revenue - current_revenue) / current_revenue) * 100
+            qty_change = ((predicted_qty - current_qty) / current_qty) * 100
+
+            scenarios.append({
+                'discount_percent': discount,
+                'price': round(float(discounted_price), 2),
+                'predicted_qty_per_order': round(float(predicted_qty), 1),
+                'estimated_monthly_sales': int(estimated_sales),
+                'estimated_monthly_revenue': round(float(estimated_revenue), 2),
+                'revenue_change_percent': round(float(revenue_change), 1),
+                'quantity_increase_percent': round(float(qty_change), 1)
+            })
+
+        # Find optimal (max revenue)
+        optimal_scenario = max(scenarios[1:], key=lambda x: x['estimated_monthly_revenue'])
+
+        return jsonify({
+            'status': 'success',
+            'product_name': product_name,
+            'current_scenario': scenarios[0],
+            'price_scenarios': scenarios[1:],
+            'optimal_scenario': optimal_scenario
+        })
+
+    except Exception as e:
+        print(f"❌ Error in pricing analysis: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 
 if __name__ == '__main__':
     print("--- Starting Flask Server on http://127.0.0.1:5000 ---")

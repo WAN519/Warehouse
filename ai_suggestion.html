@@ -42,6 +42,7 @@
     <nav class="mb-8 p-4 bg-white rounded-xl shadow-lg shadow-gray-200/40 border border-gray-100 flex space-x-6 text-sm font-semibold text-gray-600">
         <a href="/Warehouse/" class="hover:text-gray-900 transition duration-150">Home</a>
         <a href="/Warehouse/ai_suggestion.html" class="text-blue-600 border-b-2 border-blue-600 pb-1">AI Suggestion</a>
+        <a href="/Warehouse/ml_pricing.html" class="hover:text-gray-900 transition duration-150">ML Pricing Strategy</a>
         <a href="/Warehouse/analysis_reports.html" class="hover:text-gray-900 transition duration-150">Analysis History</a>
     </nav>
 
@@ -259,7 +260,7 @@
                 const row = tbody.insertRow();
                 const sellThrough = parseFloat(product.sell_through_rate) / 100;
 
-                if (sellThrough <= -0.05) {
+                if (sellThrough <= -0.02) {
                     row.classList.add('bg-red-50');
                 } else if (sellThrough < 0) {
                     row.classList.add('bg-gray-100');
@@ -290,13 +291,11 @@
          * Load Python-generated charts from Flask API
          */
         async function loadCharts() {
-            const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-                ? 'http://localhost:5000'
-                : 'https://inventory-analysis-api.onrender.com';
+            const API_BASE_URL = 'https://inventory-analysis-api.onrender.com'
 
             try {
                 // Load Chart 1: Bar Chart
-                const response1 = await fetch(`${API_BASE_URL}/api/charts/bar-top5`);
+                const response1 = await fetch(`${const API_BASE_URL}/api/charts/bar-top5`);
                 if (response1.ok) {
                     const data1 = await response1.json();
                     if (data1.image) {
@@ -306,7 +305,7 @@
                 }
 
                 // Load Chart 2: Scatter Plot
-                const response2 = await fetch(`${API_BASE_URL}/api/charts/scatter-price-days`);
+                const response2 = await fetch(`${const API_BASE_URL}/api/charts/scatter-price-days`);
                 if (response2.ok) {
                     const data2 = await response2.json();
                     if (data2.image) {
@@ -316,7 +315,7 @@
                 }
 
                 // Load Chart 3: Pie Chart
-                const response3 = await fetch(`${API_BASE_URL}/api/charts/pie-warehouse`);
+                const response3 = await fetch(`${const API_BASE_URL}/api/charts/pie-warehouse`);
                 if (response3.ok) {
                     const data3 = await response3.json();
                     if (data3.image) {
@@ -354,7 +353,7 @@
                     ? 'http://localhost:5000'
                     : 'https://inventory-analysis-api.onrender.com';
 
-                const response = await fetch(`${API_BASE_URL}/api/report`);
+                const response = await fetch(`${const API_BASE_URL}/api/report`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
