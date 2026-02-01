@@ -16,8 +16,8 @@ The complete project report, including detailed charts, visualizations, and stat
 👉 **[View Detailed Project Report (PDF)](./Warehouse.pdf)**
 
 ## 🛠️ Technologies Used
-* **Language:** Python 3.x
-* **Libraries:** Pandas, NumPy, Scikit-learn, Matplotlib
+* **Language:** Python, html, java
+* **Libraries:** Pandas, NumPy, Scikit-learn, GeminiAPI
 * **Tools:** Jupyter Notebook, Git
 
 ## 🚀 How to Use
